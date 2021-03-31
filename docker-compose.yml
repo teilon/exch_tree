@@ -3,12 +3,34 @@ version: '3'
 
 networks:
   db_network:
-    driver: bridge
+    driver: bridge 
 
 volumes:
   postgres_volume:
 
 services:
+
+  browser:
+    container_name: browser
+    image: selenium/standalone-firefox:4.0.0-alpha-7-prerelease-20200921
+    ports:
+      - "4444:4444"
+    volumes:
+     - /dev/shm:/dev/shm
+
+  parser:
+    container_name: parser
+    build: ./exch_parser_kusrkz
+    ports:
+      - "5081:5081"
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_DEBUG=1
+      - 'RUN=flask run --host=0.0.0.0 --port=5081'
+    command: flask run --host=0.0.0.0 --port=5081
+    depends_on:
+     - manager
+     - browser
 
   manager:
     container_name: manager
@@ -18,9 +40,9 @@ services:
     environment:
       - POSTGRES_HOST=db
       - POSTGRES_PORT=5432
-      - POSTGRES_USER=user_name
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=db_name
+      - POSTGRES_USER=torn
+      - POSTGRES_PASSWORD=helicopter
+      - POSTGRES_DB=exchdb
       - FLASK_APP=app.py
       - FLASK_DEBUG=1
       - 'RUN=flask run --host=0.0.0.0 --port=5080'
@@ -37,7 +59,7 @@ services:
     env_file:
      - ./db/database.conf
     ports:
-     - 5432:5432
+     - 5433:5432
     volumes:
       - ./db/pgdata:/var/lib/postgresql/data
       - ./db/scripts/:/docker-entrypoint-initdb.d/
